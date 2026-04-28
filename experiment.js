@@ -4,8 +4,17 @@
 
 const jsPsych = initJsPsych({
   on_finish: function () {
-    jsPsych.data.displayData("csv");
+    // Data are saved via DataPipe in the timeline below.
   }
+});
+
+const subjectId = jsPsych.randomization.randomID(10);
+const filename = `${subjectId}.csv`;
+const DATAPIPE_EXPERIMENT_ID = "REPLACE_WITH_BREHENY_DATAPIPE_EXPERIMENT_ID";
+
+jsPsych.data.addProperties({
+  participant_id: subjectId,
+  datapipe_experiment_id: DATAPIPE_EXPERIMENT_ID
 });
 
 // --- Latin square assignment ---
@@ -264,11 +273,32 @@ const debrief = {
         <h2>Experiment Complete</h2>
         <p>Thank you for your participation!</p>
         <p>You answered <strong>${correct}</strong> out of <strong>${total}</strong> comprehension questions correctly (${pct}%).</p>
-        <p>Press <strong>Space</strong> to see your data.</p>
+        <p>Press <strong>Space</strong> to save your data.</p>
       </div>
     `;
   },
   choices: [" "]
+};
+
+const saveData = {
+  type: jsPsychPipe,
+  action: "save",
+  experiment_id: DATAPIPE_EXPERIMENT_ID,
+  filename: filename,
+  data_string: () => jsPsych.data.get().csv()
+};
+
+const endScreen = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+    <div class="instructions">
+      <h2>Thank You</h2>
+      <p>Your responses have been saved.</p>
+      <p>You may now close this tab.</p>
+    </div>
+  `,
+  choices: "NO_KEYS",
+  trial_duration: 5000
 };
 
 // --- Run experiment ---
@@ -280,7 +310,9 @@ const timeline = [
   ...firstBlock,
   restBreak,
   ...secondBlock,
-  debrief
+  debrief,
+  saveData,
+  endScreen
 ];
 
 jsPsych.run(timeline);
